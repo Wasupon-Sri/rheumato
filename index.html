@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rheumatology Command Center Ultimate</title>
+    <style>
+        /* =========================================
+           THEME ENGINE
+           ========================================= */
+        :root {
+            /* Default: Futuristic White */
+            --bg-body: #f0f2f5; 
+            --bg-panel: #ffffff; 
+            --bg-input: #f8f9fa;
+            --text-main: #2d3436; 
+            --text-muted: #636e72;
+            --accent-primary: #0984e3; /* Electric Blue */
+            --accent-secondary: #6c5ce7; /* Purple */
+            --accent-success: #00b894; /* Teal */
+            --accent-warn: #d63031; /* Red-Orange */
+            --border-color: #dfe6e9;
+            --panel-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            --font-main: 'Segoe UI', 'Roboto', sans-serif;
+            --font-mono: 'Consolas', monospace;
+
+            /* Taxonomy Colors */
+            --dom-const: #e17055; --dom-heme: #d63031; --dom-neuro: #6c5ce7;
+            --dom-muco: #e84393; --dom-sero: #0984e3; --dom-msk: #00b894;
+            --dom-renal: #f1c40f; --dom-imm: #00cec9;
+        }
+
+        /* Themes */
+        [data-theme="obsidian"] {
+            --bg-body: #000000; --bg-panel: #121212; --bg-input: #1e1e1e;
+            --text-main: #dfe6e9; --text-muted: #b2bec3;
+            --accent-primary: #00f3ff; --accent-secondary: #bc13fe;
+            --accent-success: #0aff0a; --accent-warn: #ff003c;
+            --border-color: #333;
+            --panel-shadow: 0 0 20px rgba(0,0,0,0.7);
+            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), 
+            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        [data-theme="luxury"] {
+            --bg-body: #fdfbfd; --bg-panel: #ffffff; --bg-input: #f4f0f6;
+            --text-main: #2c2c2c; --text-muted: #666;
+            --accent-primary: #764ba2; --accent-secondary: #667eea;
+            --accent-success: #00b894; --accent-warn: #d63031;
+            --border-color: #d1d1d1;
+            --panel-shadow: 0 4px 20px rgba(118, 75, 162, 0.15);
+            background-image: radial-gradient(circle at 50% 50%, #fdfbfd 0%, #f3e7f5 100%);
+        }
+        [data-theme="aurora"] {
+            --bg-body: #020205; --bg-panel: rgba(20, 20, 30, 0.85); --bg-input: rgba(255, 255, 255, 0.05);
+            --text-main: #ffffff; --text-muted: #a0a0a0;
+            --accent-primary: #00ffd5; --accent-secondary: #ff007b;
+            --border-color: rgba(255, 255, 255, 0.15);
+        }
+        body[data-theme="aurora"]::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(125deg, #000000, #1a0b2e, #0b1a2e, #000000);
+            background-size: 400% 400%; z-index: -1; animation: gradientBG 15s ease infinite;
+        }
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        /* Core Layout */
+        body { font-family: var(--font-main); background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: 0; transition: 0.3s; }
+        .container { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding-bottom: 60px; }
+        .full-width { grid-column: 1 / -1; }
+
+        /* Navigation */
+        .top-bar {
+            background: var(--bg-panel); padding: 10px 15px; display: flex; justify-content: space-between; 
+            align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .nav-scroll { display: flex; overflow-x: auto; gap: 8px; -webkit-overflow-scrolling: touch; scrollbar-width: none; margin-right: 10px; }
+        .nav-scroll::-webkit-scrollbar { display: none; }
+        .nav-item {
+            padding: 8px 16px; background: var(--bg-input); border: 1px solid var(--border-color);
+            border-radius: 8px; color: var(--text-muted); cursor: pointer; font-weight: 600; font-size: 0.85rem;
+            white-space: nowrap; flex-shrink: 0; transition: 0.2s; text-transform: uppercase;
+        }
+        .nav-item.active { background: var(--accent-primary); color: #fff; border-color: var(--accent-primary); box-shadow: 0 4px 10px rgba(9,132,227,0.3); }
+        
+        .controls { display: flex; gap: 8px; }
+        .theme-dot { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid var(--border-color); }
+        .reset-btn { background: var(--accent-warn); color: white; border: none; padding: 5px 12px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; cursor: pointer; white-space: nowrap; }
+
+        /* Panels & Typography */
+        .app-section { display: none; padding: 15px; animation: fadeIn 0.3s; }
+        .app-section.active-section { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .panel { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; box-shadow: var(--panel-shadow); display: flex; flex-direction: column; }
+        h1 { color: var(--accent-primary); font-size: 1.2rem; margin: 0 0 15px 0; text-transform: uppercase; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; letter-spacing: 0.5px; }
+        h2 { font-size: 0.95rem; color: var(--accent-secondary); margin: 15px 0 10px 0; border-left: 4px solid var(--accent-secondary); padding-left: 10px; font-weight: 700; text-transform: uppercase; }
+
+        /* Inputs & Forms */
+        input, select, textarea {
+            width: 100%; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main);
+            padding: 12px; border-radius: 6px; font-size: 1rem; margin-bottom: 8px; font-family: inherit; outline: none; transition: 0.2s;
+        }
+        input:focus, select:focus, textarea:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(9,132,227,0.1); }
+        .row { display: flex; gap: 10px; flex-wrap: wrap; }
+        .col { flex: 1; min-width: 140px; }
+        .col-small { flex: 0 0 80px; }
+
+        /* "Easy Checkbox" Grid */
+        .calc-wrapper { background: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .calc-title { display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: var(--accent-primary); margin-bottom: 12px; font-size: 1.1rem; }
+        .score-display { font-family: var(--font-mono); color: var(--accent-success); font-size: 1.5rem; }
+        .score-display.high { color: var(--accent-warn); }
+
+        .calc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+        
+        /* The Easy Checkbox Item */
+        .calc-item {
+            display: flex; align-items: center; padding: 14px; /* Big touch target */
+            border: 1px solid var(--border-color); border-radius: 8px;
+            cursor: pointer; font-size: 0.95rem; background: var(--bg-panel);
+            transition: all 0.15s ease-in-out; user-select: none; position: relative; overflow: hidden;
+        }
+        .calc-item:active { transform: scale(0.98); }
+        .calc-item input[type="checkbox"] { 
+            width: 22px; height: 22px; margin: 0 12px 0 0; cursor: pointer; flex-shrink: 0;
+            accent-color: var(--accent-primary); pointer-events: none; /* Pass click to parent div */
+        }
+        
+        /* Active State */
+        .calc-item.active { 
+            background: rgba(9, 132, 227, 0.08); 
+            border-color: var(--accent-primary); 
+            color: var(--accent-primary); 
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(9,132,227,0.15);
+        }
+        [data-theme="obsidian"] .calc-item.active { background: rgba(0, 243, 255, 0.15); color: #fff; }
+
+        .points { margin-left: auto; font-weight: 700; color: var(--accent-secondary); background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+        
+        /* Neon Taxonomy (Domain Colors) */
+        .calc-item[data-domain="const"] { border-left: 5px solid var(--dom-const); }
+        .calc-item[data-domain="heme"] { border-left: 5px solid var(--dom-heme); }
+        .calc-item[data-domain="neuro"] { border-left: 5px solid var(--dom-neuro); }
+        .calc-item[data-domain="muco"] { border-left: 5px solid var(--dom-muco); }
+        .calc-item[data-domain="sero"] { border-left: 5px solid var(--dom-sero); }
+        .calc-item[data-domain="msk"] { border-left: 5px solid var(--dom-msk); }
+        .calc-item[data-domain="renal"] { border-left: 5px solid var(--dom-renal); }
+        .calc-item[data-domain="imm"], .calc-item[data-domain="apl"], .calc-item[data-domain="comp"], .calc-item[data-domain="abs"] { border-left: 5px solid var(--dom-imm); }
+
+        /* Status Badge */
+        .status-badge { font-size: 0.8rem; padding: 4px 12px; border-radius: 20px; margin-left: 10px; display:none; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; }
+        .status-badge.visible { display:inline-block; animation: popIn 0.3s; }
+        .status-badge.pos { background: var(--accent-warn); color: white; }
+        @keyframes popIn { 0% { transform: scale(0); } 80% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        /* Management Cards */
+        .mgmt-card { border-left: 4px solid var(--accent-secondary); background: rgba(108, 92, 231, 0.04); padding: 15px; margin-bottom: 15px; border-radius: 0 8px 8px 0; }
+        .mgmt-header { color: var(--accent-secondary); font-weight: 800; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; font-size: 0.9rem; }
+        .mgmt-sub { font-weight:bold; color: var(--accent-secondary); margin-top:12px; margin-bottom:6px; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; opacity: 0.9; }
+        .mgmt-row { margin-bottom: 8px; font-size: 0.95rem; padding-left: 12px; border-left: 2px solid var(--border-color); line-height: 1.5; }
+        .drug { color: var(--accent-primary); font-weight: 700; }
+        .dose { color: var(--accent-success); font-family: var(--font-mono); font-weight: 700; }
+        .alert { color: var(--accent-warn); font-style: italic; font-weight: 600; display: block; margin-top: 4px;}
+        .ind-box { background: rgba(0,0,0,0.03); padding: 10px; border-radius: 6px; font-size: 0.9rem; margin-bottom: 10px; font-style: italic; border-left: 3px solid var(--text-muted); }
+        
+        .preg-safe { display:inline-block; padding:2px 6px; border-radius:4px; font-size:0.7rem; background:#00b894; color:white; margin-left:5px; vertical-align:middle; font-weight:bold; }
+        .preg-unsafe { display:inline-block; padding:2px 6px; border-radius:4px; font-size:0.7rem; background:#d63031; color:white; margin-left:5px; vertical-align:middle; font-weight:bold; }
+
+        /* Tabs */
+        .tab-group { display: flex; overflow-x: auto; border-bottom: 2px solid var(--border-color); margin-bottom: 15px; gap: 10px; -webkit-overflow-scrolling: touch; }
+        .tab-btn { padding: 10px 15px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-weight: bold; border-bottom: 3px solid transparent; white-space: nowrap; flex-shrink: 0;}
+        .tab-btn.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+
+        /* Tables & Cheat Sheets */
+        details { margin-bottom: 10px; }
+        details summary { cursor: pointer; padding: 10px; background: rgba(0,0,0,0.03); border-radius: 6px; font-weight: 600; color: var(--text-muted); outline: none; list-style: none; display: flex; justify-content: space-between; }
+        details summary::after { content: '+'; font-weight: bold; }
+        details[open] summary::after { content: '-'; }
+        
+        .ref-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 10px; }
+        .ref-table th { text-align: left; border-bottom: 2px solid var(--accent-primary); padding: 6px; color: var(--accent-primary); }
+        .ref-table td { border-bottom: 1px solid var(--border-color); padding: 6px; }
+        .ref-badge { background: #636e72; color: #fff; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 2px; }
+        [data-theme="luxury"] .ref-badge { background: #b2bec3; color: #2d3436; }
+
+        /* TOOLTIPS */
+        .tooltip { border-bottom: 1px dotted var(--text-muted); cursor: help; position: relative; }
+        .tooltip:hover::after {
+            content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+            background: var(--bg-panel); color: var(--text-main); border: 1px solid var(--accent-primary);
+            padding: 8px; width: 200px; border-radius: 4px; font-size: 0.8rem; z-index: 100;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); pointer-events: none;
+        }
+
+        @media (max-width: 900px) {
+            .container { grid-template-columns: 1fr; }
+            .nav-item { font-size: 0.75rem; padding: 8px 12px; }
+        }
+        @media print {
+            .top-bar, .theme-group, button, .app-section:not(.active-section), .calc-wrapper { display: none !important; }
+            body { background: white !important; color: black !important; }
+            .panel { border: none !important; box-shadow: none !important; }
+            textarea { border: none !important; font-family: monospace !important; }
+        }
+    </style>
+</head>
+<body data-theme="future">
+
+<!-- TOP BAR -->
+<div class="top-bar">
+    <div class="nav-scroll">
+        <div class="nav-item active" onclick="nav('note')">Note Gen</div>
+        <div class="nav-item" onclick="nav('sle')">SLE Master</div>
+        <div class="nav-item" onclick="nav('ra')">RA Master</div>
+        <div class="nav-item" onclick="nav('spa')">SpA/PsA</div>
+        <div class="nav-item" onclick="nav('ssc')">SSc/Sjo</div>
+        <div class="nav-item" onclick="nav('gout')">Gout</div>
+        <div class="nav-item" onclick="nav('vasc')">Vasculitis</div>
+        <div class="nav-item" onclick="nav('aps')">APS</div>
+        <div class="nav-item" onclick="nav('utils')">Tools/Utils</div>
+    </div>
+    <div class="controls">
+        <button class="reset-btn" onclick="resetAll()">⟳ New Pt</button>
+        <div class="theme-dot" style="background:#fff;" onclick="setTheme('future')" title="White"></div>
+        <div class="theme-dot" style="background:#111;" onclick="setTheme('obsidian')" title="Dark"></div>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- 1. NOTE GENERATOR                              -->
+<!-- ============================================== -->
+<div id="section-note" class="app-section active-section">
+    <div class="container">
+        <div class="panel">
+            <h1>Rheumatology Note Gen</h1>
+            <div class="row"><div class="col"><label>Date</label><input type="date" id="consult_date"></div><div class="col"><label>HN</label><input type="text" id="hn"></div></div>
+            <div class="row"><div class="col"><label>Name</label><input type="text" id="pt_name"></div><div class="col-small"><label>Age</label><input type="number" id="age"></div></div>
+            <div class="form-group"><label>Chief Complaint</label><textarea id="cc" rows="2"></textarea></div>
+            <div class="row"><div class="col"><label>Diagnosis</label><input type="text" id="dx_hx"></div><div class="col"><label>Current Meds</label><input type="text" id="meds"></div></div>
+            <div class="form-group"><label>Assessment (S/O)</label><textarea id="assess" rows="4"></textarea></div>
+            
+            <div class="calc-wrapper">
+                <div class="calc-title" style="font-size:0.9rem;">Import Scores (Auto-Fill)</div>
+                <button onclick="importScores()" style="width:100%; padding:10px; background:var(--accent-success); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">🔄 Pull Scores from Calculators</button>
+            </div>
+            <button class="nav-item active" style="width:100%; text-align:center; margin-top:10px;" onclick="genNote()">GENERATE TEXT</button>
+        </div>
+        <div class="panel">
+            <h1>Output</h1>
+            <textarea id="output_text" style="height:100%; min-height:400px; border:1px solid var(--border-color);" readonly></textarea>
+            <div class="row" style="margin-top:10px;">
+                <button onclick="copyText()" style="flex:1; padding:12px; background:var(--accent-primary); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">📋 Copy</button>
+                <button onclick="window.print()" style="flex:1; background:var(--text-main); color:white; border:none; border-radius:6px; cursor:pointer;">🖨️ Print (Clean)</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- 2. SLE MASTER                                  -->
+<!-- ============================================== -->
+<div id="section-sle" class="app-section">
+    <div class="container">
+        <div class="panel">
+            <h1>SLE Tools</h1>
+            <div class="tab-group">
+                <button class="tab-btn active" onclick="tab(this, 'calc-acr19')">ACR 2019</button>
+                <button class="tab-btn" onclick="tab(this, 'calc-slicc')">SLICC 2012</button>
+                <button class="tab-btn" onclick="tab(this, 'calc-sledai')">SLEDAI-2K</button>
+            </div>
+
+            <!-- ACR 2019 -->
+            <div id="calc-acr19" class="tab-content active">
+                <details>
+                    <summary>Cheat Sheet: Domain Weights</summary>
+                    <table class="ref-table">
+                        <tr><th>Domain (Max 1 item/domain)</th><th>Weight</th></tr>
+                        <tr><td style="border-left:4px solid var(--dom-const)">Constitutional</td><td>Fever (2)</td></tr>
+                        <tr><td style="border-left:4px solid var(--dom-heme)">Hematologic</td><td>Leukopenia (3), Thrombo (4), Hemolysis (4)</td></tr>
+                        <tr><td style="border-left:4px solid var(--dom-neuro)">Neuropsych</td><td>Delirium (2), Psychosis (3), Seizure (5)</td></tr>
+                        <tr><td style="border-left:4px solid var(--dom-muco)">Mucocutaneous</td><td>Alopecia (2), Oral Ulcers (2), Discoid (4), Acute (6)</td></tr>
+                        <tr><td style="border-left:4px solid var(--dom-sero)">Serosal</td><td>Effusion (5), Pericarditis (6)</td></tr>
+                        <tr><td style="border-left:4px solid var(--dom-msk)">Musculoskeletal</td><td>Joint involvement (6)</td></tr>
+                        <tr><td style="border-left:4px solid var(--dom-renal)">Renal</td><td>Proteinuria >0.5g (4), Class II/V (8), Class III/IV (10)</td></tr>
+                        <tr><td style="border-left:4px solid var(--dom-imm)">Immuno</td><td>aCL/LA (2), Low C3 or C4 (3), Low C3+C4 (4), dsDNA/Sm (6)</td></tr>
+                    </table>
+                </details>
+
+                <div class="calc-wrapper">
+                    <div class="calc-title">Score (Max per Domain) <div><span id="score-acr19" class="score-display">0</span> <span id="badge-acr19" class="status-badge">CLASSIFIED</span></div></div>
+                    <div class="calc-grid" id="acr19-inputs">
+                        <div class="calc-item" data-domain="const" data-weight="2" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Fever (2)</div>
+                        <div class="calc-item" data-domain="heme" data-weight="3" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Leukopenia (3)</div>
+                        <div class="calc-item" data-domain="heme" data-weight="4" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Thrombocytopenia (4)</div>
+                        <div class="calc-item" data-domain="heme" data-weight="4" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Hemolysis (4)</div>
+                        <div class="calc-item" data-domain="neuro" data-weight="2" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Delirium (2)</div>
+                        <div class="calc-item" data-domain="neuro" data-weight="3" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Psychosis (3)</div>
+                        <div class="calc-item" data-domain="neuro" data-weight="5" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Seizure (5)</div>
+                        <div class="calc-item" data-domain="muco" data-weight="2" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Alopecia (2)</div>
+                        <div class="calc-item" data-domain="muco" data-weight="2" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Oral Ulcers (2)</div>
+                        <div class="calc-item" data-domain="muco" data-weight="4" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Discoid (4)</div>
+                        <div class="calc-item" data-domain="muco" data-weight="6" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Acute Cutaneous (6)</div>
+                        <div class="calc-item" data-domain="sero" data-weight="5" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Effusion (5)</div>
+                        <div class="calc-item" data-domain="sero" data-weight="6" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Acute Pericarditis (6)</div>
+                        <div class="calc-item" data-domain="msk" data-weight="6" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Joint Involvement (6)</div>
+                        <div class="calc-item" data-domain="renal" data-weight="4" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Proteinuria >0.5g (4)</div>
+                        <div class="calc-item" data-domain="renal" data-weight="8" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Biopsy Class II/V (8)</div>
+                        <div class="calc-item" data-domain="renal" data-weight="10" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Biopsy Class III/IV (10)</div>
+                        <div class="calc-item" data-domain="apl" data-weight="2" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Anti-PL Ab (2)</div>
+                        <div class="calc-item" data-domain="comp" data-weight="3" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Low C3 or C4 (3)</div>
+                        <div class="calc-item" data-domain="comp" data-weight="4" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Low C3 AND C4 (4)</div>
+                        <div class="calc-item" data-domain="abs" data-weight="6" onclick="toggleCalc(this, 'acr19')"><input type="checkbox">Anti-dsDNA / Sm (6)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLICC 2012 -->
+            <div id="calc-slicc" class="tab-content">
+                <div class="calc-wrapper">
+                    <div class="calc-title">SLICC 2012 <div><span id="score-slicc" class="score-display">0</span> <span id="badge-slicc" class="status-badge">Classified</span></div></div>
+                    <div style="font-size:0.8rem; margin-bottom:10px; color:var(--text-muted);">Req: ≥4 Criteria (≥1 Clinical AND ≥1 Immuno) OR Biopsy LN + ANA/dsDNA.</div>
+                    <div class="calc-grid">
+                        <div class="calc-item" data-group="clin" data-weight="1" onclick="toggleCalc(this, 'slicc')"><input type="checkbox">Acute Cutaneous</div>
+                        <div class="calc-item" data-group="clin" data-weight="1" onclick="toggleCalc(this, 'slicc')"><input type="checkbox">Chronic Cutaneous</div>
+                        <div class="calc-item" data-group="clin" data-weight="1" onclick="toggleCalc(this, 'slicc')"><input type="checkbox">Oral Ulcers</div>
+                        <div class="calc-item" data-group="clin" data-weight="1" onclick="toggleCalc(this, 'slicc')"><input type="checkbox">Alopecia</div>
+                        <div class="calc-item" data-group="clin" data-weight="1" onclick="toggleCalc(this, 'slicc')"><input type="checkbox">Synovitis</div>
+                        <div class="calc-item" data-group="clin" data-weight="1" onclick="toggleCalc(this, 'slicc')"><input type="checkbox">Renal</div>
+                        <div class="calc-item" data-group="clin" data-weight="1" onclick="toggleCalc(this, 'slicc')"><input type="checkbox">Neurologic</div>
+                        <div class="calc-item" data-group="clin" data-weight="1" onclick="toggleCalc(this, 'slicc')"><input type="checkbox">Hemolytic Anemia</div>
+                        <div class="calc-item" data-group="clin" data-weight="1" onclick="toggleCalc(this, 'slicc')"><input type="checkbox">Leukopenia/Lymphopenia</div>
+                        <div class="calc-item" data-group="clin" data-weight="1" onclick="toggleCalc(this, 'slicc')"><input type="checkbox">Thrombocytopenia</div>
+                        <div class="calc-item" data-group="imm" data-weight="1" onclick="toggleCalc(this, 'slicc')"><input type="checkbox">ANA</div>
+                        <div class="calc-item" data-group="imm" data-weight="1" onclick="toggleCalc(this, 'slicc')"><input type="checkbox">Anti-dsDNA</div>
+                        <div class="calc-item" data-group="imm" data-weight="1" onclick="toggleCalc(this, 'slicc')"><input type="checkbox">Anti-Sm</div>
+                        <div class="calc-item" data-group="imm" data-weight="1" onclick="toggleCalc(this, 'slicc')"><input type="checkbox">Anti-Phospholipid</div>
+                        <div class="calc-item" data-group="imm" data-weight="1" onclick="toggleCalc(this, 'slicc')"><input type="checkbox">Low Complement</div>
+                        <div class="calc-item" data-group="imm" data-weight="1" onclick="toggleCalc(this, 'slicc')"><input type="checkbox">Direct Coombs</div>
+                    </div>
+                </div>
+            </div>
+            
+             <!-- SLEDAI-2K -->
+            <div id="calc-sledai" class="tab-content">
+                <div class="calc-wrapper">
+                    <div class="calc-title">Activity Score <div><span id="score-sledai" class="score-display">0</span></div></div>
+                    <div class="calc-grid">
+                        <div class="calc-item" data-weight="8" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Seizure (8)</div>
+                        <div class="calc-item" data-weight="8" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Psychosis (8)</div>
+                        <div class="calc-item" data-weight="8" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Organic Brain (8)</div>
+                        <div class="calc-item" data-weight="8" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Visual Disturbance (8)</div>
+                        <div class="calc-item" data-weight="8" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Cranial Nerve (8)</div>
+                        <div class="calc-item" data-weight="8" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Lupus Headache (8)</div>
+                        <div class="calc-item" data-weight="8" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">CVA (8)</div>
+                        <div class="calc-item" data-weight="8" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Vasculitis (8)</div>
+                        <div class="calc-item" data-weight="4" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Arthritis (4)</div>
+                        <div class="calc-item" data-weight="4" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Myositis (4)</div>
+                        <div class="calc-item" data-weight="4" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Urinary Casts (4)</div>
+                        <div class="calc-item" data-weight="4" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Hematuria (4)</div>
+                        <div class="calc-item" data-weight="4" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Proteinuria (4)</div>
+                        <div class="calc-item" data-weight="4" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Pyuria (4)</div>
+                        <div class="calc-item" data-weight="2" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Rash (2)</div>
+                        <div class="calc-item" data-weight="2" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Alopecia (2)</div>
+                        <div class="calc-item" data-weight="2" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Mucosal Ulcers (2)</div>
+                        <div class="calc-item" data-weight="2" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Pleurisy (2)</div>
+                        <div class="calc-item" data-weight="2" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Pericarditis (2)</div>
+                        <div class="calc-item" data-weight="2" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Low Complement (2)</div>
+                        <div class="calc-item" data-weight="2" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Inc. DNA Binding (2)</div>
+                        <div class="calc-item" data-weight="1" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Fever (1)</div>
+                        <div class="calc-item" data-weight="1" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Thrombocytopenia (1)</div>
+                        <div class="calc-item" data-weight="1" onclick="toggleCalc(this, 'sledai')"><input type="checkbox">Leukopenia (1)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h1>Lupus Nephritis Management</h1>
+            <div class="mgmt-card" style="border-left-color:var(--accent-success);">
+                <div class="mgmt-header" style="color:var(--accent-success);"><span>Treatment Targets</span></div>
+                <div class="mgmt-row"><strong>3 Months:</strong> ≥25% reduction in UPCR (Proteinuria).</div>
+                <div class="mgmt-row"><strong>6 Months:</strong> ≥50% reduction in UPCR.</div>
+                <div class="mgmt-row"><strong>12 Months:</strong> Complete Response (UPCR < 0.5-0.7 g/g).</div>
+                <div class="mgmt-row note">If targets not met: Switch induction or Add-on (Belimumab/Voclosporin).</div>
+            </div>
+
+            <details open>
+                <summary>1. NIH Regimen (High Dose IV)</summary>
+                <div class="mgmt-card">
+                    <div class="ind-box"><strong>Indication:</strong> Severe/Life-threatening, Crescents, Rapid Renal Failure, Failure of other drugs.</div>
+                    <div class="mgmt-row"><strong>Step 1: Pulse</strong> <span class="drug">Methylprednisolone</span> 500-1000mg IV x 3 days.</div>
+                    <div class="mgmt-row"><strong>Step 2:</strong> <span class="drug">IV Cyclophosphamide</span> <span class="dose">0.5-1.0 g/m²</span> monthly x 6.</div>
+                    <div class="mgmt-row"><strong>Step 3:</strong> <span class="drug">Mesna</span> (Mandatory) at 0, 4, 8 hours.</div>
+                    <div class="alert">⚠️ eGFR < 30: Reduce dose by 30-50%.</div>
+                </div>
+            </details>
+            <details>
+                <summary>2. Euro-Lupus (Low Dose IV)</summary>
+                <div class="mgmt-card">
+                    <div class="mgmt-row"><strong>Indication:</strong> Caucasian/Mild-Mod/Fertility preservation.</div>
+                    <div class="mgmt-row"><span class="drug">Cyclophosphamide</span>: <span class="dose">500 mg</span> fixed dose q2w x 6 doses.</div>
+                    <div class="mgmt-row">Switch to MMF Maintenance at Week 12.</div>
+                </div>
+            </details>
+            <details>
+                <summary>3. MMF (Oral)</summary>
+                <div class="mgmt-card">
+                    <div class="mgmt-row"><strong>Indication:</strong> Asian/African ancestry, Avoid IV, Fertility concern (Not pregnant).</div>
+                    <div class="mgmt-row"><span class="drug">MMF</span>: Target 2-3 g/day (Titrate 500mg/week).</div>
+                    <div class="alert">⚠️ Teratogenic. Stop 6 weeks before conception.</div>
+                </div>
+            </details>
+            <details>
+                <summary>4. Add-on / Refractory</summary>
+                <div class="mgmt-card">
+                    <div class="mgmt-row"><span class="drug">Belimumab</span>: 10 mg/kg IV monthly. Add to MMF/Cyc for renal response (BLISS-LN).</div>
+                    <div class="mgmt-row"><span class="drug">Voclosporin</span>: 23.7 mg BID oral. Fast proteinuria reduction. Avoid if eGFR < 45.</div>
+                </div>
+            </details>
+            <details>
+                <summary>5. Prophylaxis</summary>
+                <div class="mgmt-card">
+                    <div class="mgmt-row">✅ <strong>PCP (PJP):</strong> Bactrim SS daily or DS Mon/Wed/Fri.</div>
+                    <div class="mgmt-row">✅ <strong>Bone:</strong> Calcium/VitD. Bisphosphonate if high risk.</div>
+                </div>
+            </details>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- 3. RA MASTER                                   -->
+<!-- ============================================== -->
+<div id="section-ra" class="app-section">
+    <div class="container">
+        <!-- DIAGNOSIS: ACR 2010 -->
+        <div class="panel">
+            <h1>RA Diagnosis (ACR 2010)</h1>
+            <div class="calc-wrapper">
+                <div class="calc-title">Score <div><span id="score-ra" class="score-display">0</span> <span id="badge-ra" class="status-badge">Classified</span></div></div>
+                
+                <details>
+                    <summary>Cheat Sheet: Weights</summary>
+                    <table class="ref-table">
+                        <tr><th>Joints</th><th>Pts</th></tr>
+                        <tr><td>1 Large</td><td>0</td></tr>
+                        <tr><td>2-10 Large</td><td>1</td></tr>
+                        <tr><td>1-3 Small</td><td>2</td></tr>
+                        <tr><td>4-10 Small</td><td>3</td></tr>
+                        <tr><td>>10 (1 Small)</td><td>5</td></tr>
+                    </table>
+                </details>
+
+                <div class="calc-grid">
+                    <div class="calc-item" data-domain="jnt" data-weight="0" onclick="toggleCalc(this, 'ra')"><input type="checkbox">1 Large Joint (0)</div>
+                    <div class="calc-item" data-domain="jnt" data-weight="1" onclick="toggleCalc(this, 'ra')"><input type="checkbox">2-10 Large (1)</div>
+                    <div class="calc-item" data-domain="jnt" data-weight="2" onclick="toggleCalc(this, 'ra')"><input type="checkbox">1-3 Small (2)</div>
+                    <div class="calc-item" data-domain="jnt" data-weight="3" onclick="toggleCalc(this, 'ra')"><input type="checkbox">4-10 Small (3)</div>
+                    <div class="calc-item" data-domain="jnt" data-weight="5" onclick="toggleCalc(this, 'ra')"><input type="checkbox">>10 Joints (5)</div>
+                    <!-- Serology -->
+                    <div class="calc-item" data-domain="sero" data-weight="2" onclick="toggleCalc(this, 'ra')"><input type="checkbox">Low RF/ACPA (2)</div>
+                    <div class="calc-item" data-domain="sero" data-weight="3" onclick="toggleCalc(this, 'ra')"><input type="checkbox">High RF/ACPA (3)</div>
+                    <!-- APR -->
+                    <div class="calc-item" data-domain="apr" data-weight="1" onclick="toggleCalc(this, 'ra')"><input type="checkbox">Abnormal CRP or ESR (1)</div>
+                    <!-- Duration -->
+                    <div class="calc-item" data-domain="dur" data-weight="1" onclick="toggleCalc(this, 'ra')"><input type="checkbox">Duration ≥6wk (1)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h1>RA Activity (CDAI)</h1>
+            <div class="calc-wrapper">
+                <div class="calc-title">CDAI <span id="score-cdai" class="score-display">0</span></div>
+                <div class="row">
+                    <div class="col"><label>Tender (0-28)</label><input type="number" id="tjc" oninput="calcCDAI()"></div>
+                    <div class="col"><label>Swollen (0-28)</label><input type="number" id="sjc" oninput="calcCDAI()"></div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <label>Pt Global (0-10)</label><input type="number" id="pt_glob" placeholder="VAS" oninput="calcCDAI()">
+                    </div>
+                    <div class="col">
+                        <label>MD Global (0-10)</label><input type="number" id="md_glob" placeholder="VAS" oninput="calcCDAI()">
+                    </div>
+                </div>
+                <div style="margin-top:10px; border-top:1px solid var(--border-color); padding-top:5px;">
+                    <span style="color:var(--accent-success)">Remission ≤2.8</span> | <span style="color:var(--accent-warn)">Low ≤10</span> | <span style="color:var(--accent-secondary)">Mod ≤22</span> | <span style="color:var(--accent-danger)">High >22</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h1>RA Management (EULAR 2022)</h1>
+            <div class="mgmt-card" style="border-left-color:var(--accent-success);">
+                <div class="mgmt-header" style="color:var(--accent-success);"><span>Poor Prognostic Factors</span></div>
+                <div class="mgmt-row">1. High RF/ACPA levels.</div>
+                <div class="mgmt-row">2. High disease activity (CDAI > 22).</div>
+                <div class="mgmt-row">3. Early joint damage (Erosions).</div>
+                <div class="mgmt-row">4. Failure of 2+ csDMARDs.</div>
+            </div>
+
+            <details open>
+                <summary>Phase 1: csDMARDs</summary>
+                <div class="mgmt-card">
+                    <div class="mgmt-header"><span>Methotrexate (Anchor)</span></div>
+                    <div class="mgmt-row"><span class="drug">Start:</span> 10-15 mg/wk. Escalate to 25 mg/wk.</div>
+                    <div class="alert">eGFR < 30: Contraindicated.</div>
+                </div>
+                <div class="mgmt-card">
+                    <div class="mgmt-sub">Alternatives (If MTX Contraindicated)</div>
+                    <div class="mgmt-row"><span class="drug">Leflunomide</span>: 20mg daily <span class="preg-unsafe">Unsafe</span></div>
+                    <div class="mgmt-row"><span class="drug">Sulfasalazine</span>: 2-3 g/day <span class="preg-safe">Safe</span></div>
+                    <div class="mgmt-row"><span class="drug">Triple Therapy</span>: MTX + SSZ + HCQ (If no access to Bio).</div>
+                </div>
+            </details>
+            
+            <details>
+                <summary>Phase 2: Biologicals (bDMARDs)</summary>
+                <div class="mgmt-card">
+                    <div class="mgmt-header"><span>Pre-Biologic Safety Checklist</span></div>
+                    <div class="mgmt-row">✅ T-Spot / IGRA (Latent TB), Hep B, Hep C, CXR.</div>
+                    <div class="mgmt-row">✅ Vaccines: Pneumococcal, Zoster (Recombinant), Influenza.</div>
+                </div>
+                <div class="mgmt-card">
+                    <div class="mgmt-header"><span>Selection Matrix</span></div>
+                    <div class="mgmt-row"><strong>Standard:</strong> TNF-i (Etanercept/Adalimumab) + MTX.</div>
+                    <div class="mgmt-row"><strong>ILD History:</strong> Rituximab or Abatacept preferred.</div>
+                    <div class="mgmt-row"><strong>Heart Failure (NYHA III/IV):</strong> AVOID TNF-i.</div>
+                    <div class="mgmt-row"><strong>VTE/CV Risk/Smoker >65y:</strong> AVOID JAK-i.</div>
+                </div>
+                <div class="mgmt-card">
+                    <div class="mgmt-header"><span>Common Dosing</span></div>
+                    <div class="mgmt-row"><span class="drug">Etanercept</span>: 50 mg SC weekly.</div>
+                    <div class="mgmt-row"><span class="drug">Adalimumab</span>: 40 mg SC every 2 weeks.</div>
+                    <div class="mgmt-row"><span class="drug">Tocilizumab</span>: 162 mg SC weekly (or 8mg/kg IV q4w).</div>
+                    <div class="mgmt-row"><span class="drug">Tofacitinib</span>: 5 mg BID or 11 mg XR daily.</div>
+                </div>
+            </details>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- 4. SpA & PsA                                   -->
+<!-- ============================================== -->
+<div id="section-spa" class="app-section">
+    <div class="container">
+        <div class="panel">
+            <h1>Spondyloarthritis</h1>
+            <div class="tab-group">
+                <button class="tab-btn active" onclick="tab(this, 'calc-axial')">Axial SpA</button>
+                <button class="tab-btn" onclick="tab(this, 'calc-caspar')">PsA (CASPAR)</button>
+                <button class="tab-btn" onclick="tab(this, 'calc-basdai')">BASDAI</button>
+            </div>
+
+            <!-- AXIAL SPA -->
+            <div id="calc-axial" class="tab-content active">
+                <div class="calc-wrapper">
+                    <div class="calc-title">ASAS Criteria <div><span id="score-spa" class="status-badge">Classified</span></div></div>
+                    <div style="font-size:0.8rem; margin-bottom:10px;">Entry: LBP ≥3 months, Age <45.</div>
+                    <div class="calc-grid">
+                        <div class="calc-item full-width active" onclick="toggleSpA(this)"><input type="checkbox" id="spa_sacro"><strong>Sacroiliitis on Imaging (MRI/XR)</strong></div>
+                        <div class="calc-item full-width" onclick="toggleSpA(this)"><input type="checkbox" id="spa_b27"><strong>HLA-B27 Positive</strong></div>
+                        <div class="calc-item" onclick="toggleSpA(this)"><input type="checkbox" class="spa-feat">Inflam Back Pain</div>
+                        <div class="calc-item" onclick="toggleSpA(this)"><input type="checkbox" class="spa-feat">Arthritis</div>
+                        <div class="calc-item" onclick="toggleSpA(this)"><input type="checkbox" class="spa-feat">Enthesitis (Heel)</div>
+                        <div class="calc-item" onclick="toggleSpA(this)"><input type="checkbox" class="spa-feat">Uveitis</div>
+                        <div class="calc-item" onclick="toggleSpA(this)"><input type="checkbox" class="spa-feat">Dactylitis</div>
+                        <div class="calc-item" onclick="toggleSpA(this)"><input type="checkbox" class="spa-feat">Psoriasis</div>
+                        <div class="calc-item" onclick="toggleSpA(this)"><input type="checkbox" class="spa-feat">Crohn's/Colitis</div>
+                        <div class="calc-item" onclick="toggleSpA(this)"><input type="checkbox" class="spa-feat">Good NSAID response</div>
+                        <div class="calc-item" onclick="toggleSpA(this)"><input type="checkbox" class="spa-feat">Family Hx SpA</div>
+                        <div class="calc-item" onclick="toggleSpA(this)"><input type="checkbox" class="spa-feat">Elevated CRP</div>
+                    </div>
+                    <div style="margin-top:10px; font-size:0.8rem; color:var(--text-muted);">Imaging Arm: Sacroiliitis + ≥1 Feature. Clinical Arm: B27 + ≥2 Features.</div>
+                </div>
+            </div>
+            
+            <!-- CASPAR -->
+             <div id="calc-caspar" class="tab-content">
+                <div class="calc-wrapper">
+                    <div class="calc-title">CASPAR Score <div><span id="score-caspar" class="score-display">0</span> <span id="badge-caspar" class="status-badge">Classified</span></div></div>
+                    <div class="calc-grid">
+                        <div class="calc-item" data-weight="2" onclick="toggleCalc(this, 'caspar')"><input type="checkbox">Current Psoriasis (2)</div>
+                        <div class="calc-item" data-weight="1" onclick="toggleCalc(this, 'caspar')"><input type="checkbox">Personal Hx Psoriasis (1)</div>
+                        <div class="calc-item" data-weight="1" onclick="toggleCalc(this, 'caspar')"><input type="checkbox">Family Hx Psoriasis (1)</div>
+                        <div class="calc-item" data-weight="1" onclick="toggleCalc(this, 'caspar')"><input type="checkbox">Nail Dystrophy (1)</div>
+                        <div class="calc-item" data-weight="1" onclick="toggleCalc(this, 'caspar')"><input type="checkbox">Negative RF (1)</div>
+                        <div class="calc-item" data-weight="1" onclick="toggleCalc(this, 'caspar')"><input type="checkbox">Dactylitis (1)</div>
+                        <div class="calc-item" data-weight="1" onclick="toggleCalc(this, 'caspar')"><input type="checkbox">Juxta-articular Bone (1)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BASDAI -->
+            <div id="calc-basdai" class="tab-content">
+                <div class="calc-wrapper">
+                    <div class="calc-title">BASDAI Score <span id="score-basdai" class="score-display">0</span></div>
+                    <div class="row"><div class="col"><label>1. Fatigue</label><input type="number" class="bas-in" oninput="calcBASDAI()"></div></div>
+                    <div class="row"><div class="col"><label>2. Neck/Back/Hip Pain</label><input type="number" class="bas-in" oninput="calcBASDAI()"></div></div>
+                    <div class="row"><div class="col"><label>3. Peripheral Swelling/Pain</label><input type="number" class="bas-in" oninput="calcBASDAI()"></div></div>
+                    <div class="row"><div class="col"><label>4. Tenderness (Enthesis)</label><input type="number" class="bas-in" oninput="calcBASDAI()"></div></div>
+                    <div class="row"><div class="col"><label>5. AM Stiffness Severity</label><input type="number" class="bas-in" oninput="calcBASDAI()"></div></div>
+                    <div class="row"><div class="col"><label>6. AM Stiffness Duration</label><input type="number" class="bas-in" oninput="calcBASDAI()"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h1>SpA & PsA Management</h1>
+             <div class="mgmt-card">
+                <div class="mgmt-header"><span>Axial Disease (AS/nr-axSpA)</span></div>
+                <div class="mgmt-row">1. <strong>NSAIDs:</strong> Max tolerated dose for ≥4 weeks.</div>
+                <div class="mgmt-row">2. <strong>Biologics:</strong> TNF-i (Infliximab, Adalimumab) or IL-17i (Secukinumab).</div>
+                <div class="alert">csDMARDs (MTX/SSZ) do NOT work for axial symptoms.</div>
+            </div>
+            <div class="mgmt-card">
+                <div class="mgmt-header"><span>Psoriatic Arthritis (PsA)</span></div>
+                <div class="mgmt-row"><strong>Peripheral Arthritis:</strong> Start MTX or Leflunomide.</div>
+                <div class="mgmt-row"><strong>Axial/Enthesitis:</strong> Go to Biologics (TNF-i, IL-17i).</div>
+                <div class="mgmt-row"><strong>Skin Dominant:</strong> IL-17i or IL-23i (Guselkumab).</div>
+                <div class="mgmt-row note">Note: IL-23i works for skin/peripheral but NOT axial disease.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- 5. SSc / SJOGREN                               -->
+<!-- ============================================== -->
+<div id="section-ssc" class="app-section">
+    <div class="container">
+        <!-- SSC -->
+        <div class="panel">
+            <h1>Systemic Sclerosis</h1>
+            <div class="calc-wrapper">
+                <div class="calc-title">Score (Max/Domain) <div><span id="score-ssc" class="score-display">0</span> <span id="badge-ssc" class="status-badge">Classified</span></div></div>
+                
+                <details>
+                    <summary>Cheat Sheet: Weights</summary>
+                    <table class="ref-table">
+                        <tr><th>Item</th><th>Score</th></tr>
+                        <tr><td>Skin Thickening Proximal</td><td>9</td></tr>
+                        <tr><td>Sclerodactyly</td><td>4</td></tr>
+                        <tr><td>Fingertip Ulcers</td><td>2</td></tr>
+                        <tr><td>Pitting Scars</td><td>3</td></tr>
+                        <tr><td>Telangiectasia</td><td>2</td></tr>
+                        <tr><td>Abn Nailfold</td><td>2</td></tr>
+                        <tr><td>Lung (PAH/ILD)</td><td>2</td></tr>
+                        <tr><td>Raynaud's</td><td>3</td></tr>
+                        <tr><td>SSc-Abs</td><td>3</td></tr>
+                    </table>
+                </details>
+
+                <div class="calc-grid" id="ssc-inputs">
+                    <div class="calc-item full-width" data-domain="prox" data-weight="9" onclick="toggleCalc(this, 'ssc')"><input type="checkbox"><strong>Skin thickening proximal to MCP (9)</strong></div>
+                    <div class="calc-item" data-domain="skin" data-weight="4" onclick="toggleCalc(this, 'ssc')"><input type="checkbox">Sclerodactyly (4)</div>
+                    <div class="calc-item" data-domain="skin" data-weight="2" onclick="toggleCalc(this, 'ssc')"><input type="checkbox">Puffy Fingers (2)</div>
+                    <div class="calc-item" data-domain="tips" data-weight="3" onclick="toggleCalc(this, 'ssc')"><input type="checkbox">Pitting Scars (3)</div>
+                    <div class="calc-item" data-domain="tips" data-weight="2" onclick="toggleCalc(this, 'ssc')"><input type="checkbox">Tip Ulcers (2)</div>
+                    <div class="calc-item" data-domain="tel" data-weight="2" onclick="toggleCalc(this, 'ssc')"><input type="checkbox">Telangiectasia (2)</div>
+                    <div class="calc-item" data-domain="caps" data-weight="2" onclick="toggleCalc(this, 'ssc')"><input type="checkbox">Abn Nailfold (2)</div>
+                    <div class="calc-item" data-domain="lung" data-weight="2" onclick="toggleCalc(this, 'ssc')"><input type="checkbox">PAH / ILD (2)</div>
+                    <div class="calc-item" data-domain="ray" data-weight="3" onclick="toggleCalc(this, 'ssc')"><input type="checkbox">Raynaud's (3)</div>
+                    <div class="calc-item" data-domain="abs" data-weight="3" onclick="toggleCalc(this, 'ssc')"><input type="checkbox">SSc-Abs (3)</div>
+                </div>
+            </div>
+            <div class="mgmt-card">
+                <div class="mgmt-header"><span style="color:var(--accent-warn)">⚠️ Renal Crisis (SRC)</span></div>
+                <div class="mgmt-row"><strong>Prevention:</strong> AVOID Prednisolone >15mg/day.</div>
+                <div class="mgmt-row"><strong>Treatment:</strong> Captopril 6.25-12.5mg TID, titrate fast.</div>
+            </div>
+        </div>
+
+        <!-- SJOGREN -->
+        <div class="panel">
+            <h1>Sjogren's (2016)</h1>
+            <div class="calc-wrapper">
+                <div class="calc-title">Score <div><span id="score-sjo" class="score-display">0</span> <span id="badge-sjo" class="status-badge">Classified</span></div></div>
+                <div class="calc-grid" id="sjo-inputs">
+                    <div class="calc-item" data-weight="3" onclick="toggleCalc(this, 'sjo')"><input type="checkbox">Lip Bx Sialadenitis (3)</div>
+                    <div class="calc-item" data-weight="3" onclick="toggleCalc(this, 'sjo')"><input type="checkbox">Anti-SSA/Ro Pos (3)</div>
+                    <div class="calc-item" data-weight="1" onclick="toggleCalc(this, 'sjo')"><input type="checkbox">OSS ≥5 (1)</div>
+                    <div class="calc-item" data-weight="1" onclick="toggleCalc(this, 'sjo')"><input type="checkbox">Schirmer ≤5mm (1)</div>
+                    <div class="calc-item" data-weight="1" onclick="toggleCalc(this, 'sjo')"><input type="checkbox">UWS ≤0.1ml/min (1)</div>
+                </div>
+            </div>
+            
+            <details>
+                <summary>Sjogren's Management</summary>
+                <div class="mgmt-card">
+                    <div class="mgmt-header"><span>Sicca (Dryness)</span></div>
+                    <div class="mgmt-row"><strong>Eyes:</strong> Artificial tears. Cyclosporine 0.05% drops.</div>
+                    <div class="mgmt-row"><strong>Oral:</strong> Saliva sub. <span class="drug">Pilocarpine</span> 5mg QID.</div>
+                </div>
+                <div class="mgmt-card">
+                    <div class="mgmt-header"><span>Systemic</span></div>
+                    <div class="mgmt-row"><span class="drug">Hydroxychloroquine</span>: 5mg/kg/d for fatigue/arthralgia.</div>
+                    <div class="mgmt-row"><span class="drug">Rituximab</span>: For vasculitis, cryoglobulinemia.</div>
+                </div>
+            </details>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- 6. GOUT (WITH CKD DOSING)                      -->
+<!-- ============================================== -->
+<div id="section-gout" class="app-section">
+    <div class="container">
+        <div class="panel">
+            <h1>Gout (ACR 2015)</h1>
+            <div class="calc-wrapper">
+                <div class="calc-title">Score <div><span id="score-gout" class="score-display">0</span> <span id="badge-gout" class="status-badge">Classified</span></div></div>
+                
+                 <details>
+                    <summary>Cheat Sheet: Weights</summary>
+                    <table class="ref-table">
+                        <tr><th>Item</th><th>Points</th></tr>
+                        <tr><td>MTP1 Joint</td><td>2</td></tr>
+                        <tr><td>Clinical Tophi</td><td>4</td></tr>
+                        <tr><td>Serum Urate >10</td><td>4</td></tr>
+                        <tr><td>Serum Urate <4</td><td>-4</td></tr>
+                        <tr><td>Double Contour/DECT</td><td>4</td></tr>
+                        <tr><td>Neg MSU</td><td>-2</td></tr>
+                    </table>
+                </details>
+
+                <div class="calc-grid">
+                    <div class="calc-item" data-domain="pat" data-weight="2" onclick="toggleCalc(this, 'gout')"><input type="checkbox">MTP1 Joint (2)</div>
+                    <div class="calc-item" data-domain="char" data-weight="3" onclick="toggleCalc(this, 'gout')"><input type="checkbox">Symptoms (Erythema/Tender/Diff walk) (3)</div>
+                    <div class="calc-item" data-domain="course" data-weight="2" onclick="toggleCalc(this, 'gout')"><input type="checkbox">Recurrent Typical Episodes (2)</div>
+                    <div class="calc-item" data-weight="4" onclick="toggleCalc(this, 'gout')"><input type="checkbox">Tophi (4)</div>
+                    <div class="calc-item" data-domain="ua" data-weight="4" onclick="toggleCalc(this, 'gout')"><input type="checkbox">SU >10 mg/dl (4)</div>
+                    <div class="calc-item" data-domain="ua" data-weight="-4" onclick="toggleCalc(this, 'gout')"><input type="checkbox">SU < 4 mg/dl (-4)</div>
+                    <div class="calc-item" data-weight="4" onclick="toggleCalc(this, 'gout')"><input type="checkbox">DECT Urate / Double Contour (4)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h1>Gout Management</h1>
+            <div class="mgmt-card" style="border-left-color:var(--accent-success)">
+                <div class="mgmt-header" style="color:var(--accent-success)"><span>Start Low, Go Slow (Allopurinol)</span></div>
+                <div class="mgmt-row">eGFR > 60: Start 100 mg daily.</div>
+                <div class="mgmt-row"><strong>CKD 4 (eGFR < 30):</strong> Start 50 mg daily.</div>
+                <div class="alert">Screen HLA-B*5801 in Thai/Han Chinese.</div>
+            </div>
+            <div class="mgmt-card">
+                <div class="mgmt-header"><span>Acute Flare (CKD)</span></div>
+                <div class="mgmt-row"><strong>Colchicine:</strong> If eGFR < 30, do not repeat course within 14 days.</div>
+                <div class="mgmt-row"><strong>Steroids:</strong> Prednisolone 30-35mg x 5 days (Safest for CKD).</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- 7. VASCULITIS (ALL TYPES)                      -->
+<!-- ============================================== -->
+<div id="section-vasc" class="app-section">
+    <div class="container full-width">
+        <div class="panel">
+            <h1>Vasculitis Classification</h1>
+            <div class="tab-group">
+                <button class="tab-btn active" onclick="tab(this, 'calc-gca')">GCA</button>
+                <button class="tab-btn" onclick="tab(this, 'calc-gpa')">GPA</button>
+                <button class="tab-btn" onclick="tab(this, 'calc-mpa')">MPA</button>
+                <button class="tab-btn" onclick="tab(this, 'calc-egpa')">EGPA</button>
+            </div>
+
+            <div id="calc-gca" class="tab-content active">
+                <div class="calc-wrapper">
+                    <div class="calc-title">GCA <div><span id="score-gca" class="score-display">0</span> <span id="badge-gca" class="status-badge">YES</span></div></div>
+                    <div class="calc-grid">
+                        <div class="calc-item" data-weight="3" onclick="toggleCalc(this, 'gca')"><input type="checkbox">Morning Stiffness (3)</div>
+                        <div class="calc-item" data-weight="3" onclick="toggleCalc(this, 'gca')"><input type="checkbox">Jaw Claudication (3)</div>
+                        <div class="calc-item" data-weight="2" onclick="toggleCalc(this, 'gca')"><input type="checkbox">Scalp Tenderness (2)</div>
+                        <div class="calc-item" data-weight="2" onclick="toggleCalc(this, 'gca')"><input type="checkbox">Loss of Pulse (2)</div>
+                        <div class="calc-item" data-weight="3" onclick="toggleCalc(this, 'gca')"><input type="checkbox">ESR≥50 / CRP≥10 (3)</div>
+                        <div class="calc-item" data-weight="5" onclick="toggleCalc(this, 'gca')"><input type="checkbox">Halo Sign (US) (5)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="calc-gpa" class="tab-content">
+                 <div class="calc-wrapper">
+                    <div class="calc-title">GPA <div><span id="score-gpa" class="score-display">0</span> <span id="badge-gpa" class="status-badge">YES</span></div></div>
+                    <div class="calc-grid">
+                        <div class="calc-item" data-weight="5" onclick="toggleCalc(this, 'gpa')"><input type="checkbox">c-ANCA / PR3+ (5)</div>
+                        <div class="calc-item" data-weight="3" onclick="toggleCalc(this, 'gpa')"><input type="checkbox">Bloody Nasal D/C (3)</div>
+                        <div class="calc-item" data-weight="2" onclick="toggleCalc(this, 'gpa')"><input type="checkbox">Lung Cavity (2)</div>
+                        <div class="calc-item" data-weight="-4" onclick="toggleCalc(this, 'gpa')"><input type="checkbox">p-ANCA / MPO+ (-4)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="calc-mpa" class="tab-content">
+                <div class="calc-wrapper">
+                   <div class="calc-title">MPA <div><span id="score-mpa" class="score-display">0</span> <span id="badge-mpa" class="status-badge">YES</span></div></div>
+                   <div class="calc-grid">
+                       <div class="calc-item" data-weight="6" onclick="toggleCalc(this, 'mpa')"><input type="checkbox">p-ANCA / MPO+ (6)</div>
+                       <div class="calc-item" data-weight="3" onclick="toggleCalc(this, 'mpa')"><input type="checkbox">ILD on CT (3)</div>
+                       <div class="calc-item" data-weight="3" onclick="toggleCalc(this, 'mpa')"><input type="checkbox">Pauci-immune GN (3)</div>
+                       <div class="calc-item" data-weight="-1" onclick="toggleCalc(this, 'mpa')"><input type="checkbox">c-ANCA / PR3+ (-1)</div>
+                   </div>
+               </div>
+           </div>
+
+           <div id="calc-egpa" class="tab-content">
+                <div class="calc-wrapper">
+                   <div class="calc-title">EGPA <div><span id="score-egpa" class="score-display">0</span> <span id="badge-egpa" class="status-badge">YES</span></div></div>
+                   <div class="calc-grid">
+                       <div class="calc-item" data-weight="3" onclick="toggleCalc(this, 'egpa')"><input type="checkbox">Asthma (3)</div>
+                       <div class="calc-item" data-weight="5" onclick="toggleCalc(this, 'egpa')"><input type="checkbox">Eosinophilia (5)</div>
+                       <div class="calc-item" data-weight="3" onclick="toggleCalc(this, 'egpa')"><input type="checkbox">Polyps (3)</div>
+                       <div class="calc-item" data-weight="3" onclick="toggleCalc(this, 'egpa')"><input type="checkbox">p-ANCA (3)</div>
+                   </div>
+               </div>
+           </div>
+
+           <div style="margin-top:15px;">
+            <details>
+                <summary>2022 Criteria Comparison Table</summary>
+                <table class="ref-table">
+                    <tr><th>Item</th><th>GPA</th><th>MPA</th><th>EGPA</th></tr>
+                    <tr><td>Nasal/Bloody</td><td>+3</td><td>-3</td><td>+3 (Polyps)</td></tr>
+                    <tr><td>Cartilage</td><td>+2</td><td>--</td><td>--</td></tr>
+                    <tr><td>Hearing Loss</td><td>+1</td><td>--</td><td>--</td></tr>
+                    <tr><td>c-ANCA/PR3</td><td>+5</td><td>-1</td><td>-3</td></tr>
+                    <tr><td>p-ANCA/MPO</td><td>-4</td><td>+6</td><td>+3</td></tr>
+                    <tr><td>Eosinophilia</td><td>-1</td><td>-4</td><td>+5</td></tr>
+                    <tr><td>Lung Nodules</td><td>+2</td><td>--</td><td>--</td></tr>
+                    <tr><td>ILD on CT</td><td>--</td><td>+3</td><td>--</td></tr>
+                    <tr><td>Asthma/Obs</td><td>--</td><td>--</td><td>+3</td></tr>
+                </table>
+            </details>
+           </div>
+        </div>
+
+        <div class="panel">
+            <h1>Vasculitis Management</h1>
+            <div class="mgmt-card">
+                <div class="mgmt-header"><span>GCA Management</span></div>
+                <div class="mgmt-row">1. <strong>Prednisolone:</strong> 1mg/kg/day (Max 60mg).</div>
+                <div class="mgmt-row">2. <strong>Visual Loss:</strong> IV Methylprednisolone 1g x 3 days immediately.</div>
+                <div class="mgmt-row">3. <strong>Tocilizumab:</strong> 162mg SC weekly (Steroid sparing).</div>
+            </div>
+            <details open>
+                <summary>AAV Induction (PEXIVAS)</summary>
+                <div class="mgmt-card">
+                    <div class="mgmt-row"><strong>Rituximab:</strong> 375mg/m² x4 weeks OR 1g x2 (D0, D14).</div>
+                    <div class="mgmt-row"><strong>Cyclophosphamide:</strong> IV Pulse 15mg/kg (max 1.2g) q2w x3 then q3w.</div>
+                    <div class="mgmt-row"><strong>PJP Prophylaxis:</strong> Bactrim SS daily mandatory.</div>
+                </div>
+            </details>
+            <details>
+                <summary>Maintenance</summary>
+                <div class="mgmt-card">
+                    <div class="mgmt-header"><span>Remission</span></div>
+                    <div class="mgmt-row"><span class="drug">Rituximab</span>: 500mg every 6 months.</div>
+                    <div class="mgmt-row"><span class="drug">Azathioprine</span>: 2mg/kg/day.</div>
+                </div>
+            </details>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- 8. APS (NEW SECTION)                           -->
+<!-- ============================================== -->
+<div id="section-aps" class="app-section">
+    <div class="container">
+        <div class="panel">
+            <h1>APS Calculator (Sydney)</h1>
+            <div class="calc-wrapper">
+                <div class="calc-title">Status <div><span id="score-aps" class="status-badge">Definite</span></div></div>
+                <div class="calc-grid">
+                    <div class="calc-item active full-width" onclick="toggleAPS(this)"><input type="checkbox" id="aps_clin"><strong>Clinical Event (Thrombosis or Pregnancy Morbidity)</strong></div>
+                    <div class="calc-item full-width" onclick="toggleAPS(this)"><input type="checkbox" id="aps_lab"><strong>Lab Criteria (Lupus Anticoagulant / aCL / B2GP1)</strong></div>
+                </div>
+            </div>
+        </div>
+        <div class="panel">
+            <h1>APS Management</h1>
+             <div class="mgmt-card">
+                <div class="mgmt-header"><span>Anticoagulation Targets</span></div>
+                <div class="mgmt-row"><strong>Venous Event:</strong> Warfarin (INR 2.0 - 3.0).</div>
+                <div class="mgmt-row"><strong>Arterial/Recurrent:</strong> Warfarin (INR 3.0 - 4.0) OR Add Aspirin.</div>
+                <div class="alert">DOACs (Rivaroxaban) are NOT recommended (TRAPS Trial).</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- 9. UTILS                                       -->
+<!-- ============================================== -->
+<div id="section-utils" class="app-section">
+    <div class="container">
+        <div class="panel">
+            <h1>Bedside Utils</h1>
+            <div class="calc-wrapper">
+                <div class="calc-title">BSA Calculator</div>
+                <div class="row">
+                    <div class="col"><label>Height (cm)</label><input type="number" id="bsa_ht" oninput="calcBSA()"></div>
+                    <div class="col"><label>Weight (kg)</label><input type="number" id="bsa_wt" oninput="calcBSA()"></div>
+                </div>
+                <div class="score-display" style="text-align:center;">BSA: <span id="bsa_res">0.00</span> m²</div>
+            </div>
+            <div class="mgmt-card">
+                <div class="mgmt-header"><span>Pregnancy Safety</span></div>
+                <div class="mgmt-row"><span class="preg-safe">Safe</span> HCQ, Azathioprine, Cyclosporine, Tacrolimus, TNF-i.</div>
+                <div class="mgmt-row"><span class="preg-unsafe">UNSAFE</span> MTX, MMF, Leflunomide, Cyclophosphamide.</div>
+            </div>
+             <div class="mgmt-card">
+                <div class="mgmt-header"><span>Interaction Alert</span></div>
+                <div class="mgmt-row" style="color:var(--accent-warn)">⚠️ <strong>Allopurinol + Azathioprine:</strong> Severe bone marrow suppression. AVOID.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- CORE ENGINE ---
+    function nav(id) {
+        document.querySelectorAll('.app-section').forEach(el => el.classList.remove('active-section'));
+        document.getElementById('section-' + id).classList.add('active-section');
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        const map = {'note':0, 'sle':1, 'ra':2, 'spa':3, 'ssc':4, 'gout':5, 'vasc':6, 'aps':7, 'utils':8};
+        if(map[id] !== undefined) document.querySelectorAll('.nav-item')[map[id]].classList.add('active');
+    }
+
+    function setTheme(theme) { document.body.setAttribute('data-theme', theme); }
+
+    function tab(btn, contentId) {
+        const parent = btn.parentElement; 
+        parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const panel = btn.closest('.panel');
+        panel.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        panel.querySelector('#' + contentId).classList.add('active');
+    }
+
+    function toggleCalc(div, type) {
+        const checkbox = div.querySelector('input');
+        if(event.target !== checkbox) checkbox.checked = !checkbox.checked;
+        div.classList.toggle('active', checkbox.checked);
+
+        let total = 0;
+        const container = div.closest('.calc-wrapper') || div.closest('.calc-grid');
+        const activeItems = container.querySelectorAll('.calc-item.active');
+        
+        const domainScores = {}; 
+        let simpleTotal = 0;
+        let sl_clin = 0, sl_imm = 0; 
+
+        activeItems.forEach(item => {
+            const w = parseFloat(item.getAttribute('data-weight'));
+            const d = item.getAttribute('data-domain');
+            const g = item.getAttribute('data-group');
+
+            if(type === 'slicc') { if(g === 'clin') sl_clin++; if(g === 'imm') sl_imm++; }
+
+            if (d) {
+                if (!domainScores[d]) domainScores[d] = -999; 
+                if (w > domainScores[d]) domainScores[d] = w;
+            } else {
+                simpleTotal += w;
+            }
+        });
+
+        for (let key in domainScores) { simpleTotal += domainScores[key]; }
+
+        const display = document.getElementById('score-' + type);
+        if(display) display.innerText = simpleTotal;
+        
+        let high = false;
+        if(type === 'acr19' && simpleTotal >= 10) high = true;
+        if(type === 'slicc') {
+            if(simpleTotal >= 4 && sl_clin >= 1 && sl_imm >= 1) high = true;
+        }
+        
+        if(type === 'ssc' && simpleTotal >= 9) high = true;
+        if(type === 'gout' && simpleTotal >= 8) high = true;
+        if(type === 'ra' && simpleTotal >= 6) high = true;
+        if(type === 'sjo' && simpleTotal >= 4) high = true;
+        if((type === 'gpa' || type === 'mpa' || type === 'gca') && simpleTotal >= 5) high = true;
+        if(type === 'egpa' && simpleTotal >= 6) high = true;
+        if(type === 'caspar' && simpleTotal >= 3) high = true;
+        
+        if(high && display) display.classList.add('high'); else if(display) display.classList.remove('high');
+        
+        const badge = document.getElementById('badge-' + type);
+        if(badge) {
+            if(high) { badge.classList.add('visible', 'pos'); badge.innerText = "CLASSIFIED"; }
+            else { badge.classList.remove('visible', 'pos'); badge.innerText = ""; }
+        }
+    }
+
+    function toggleSpA(div) {
+        const checkbox = div.querySelector('input');
+        if(event.target !== checkbox) checkbox.checked = !checkbox.checked;
+        
+        // Correctly toggle the clicked element
+        div.classList.toggle('active', checkbox.checked);
+
+        // Re-evaluate Logic
+        const img = document.getElementById('spa_sacro').checked;
+        const b27 = document.getElementById('spa_b27').checked;
+        let features = 0;
+        document.querySelectorAll('.spa-feat').forEach(c => { 
+            // Use closest to handle click on text vs div
+            const parent = c.closest('.calc-item');
+            if(c.checked) { features++; } 
+        });
+
+        const badge = document.getElementById('score-spa');
+        let classified = (img && features >= 1) || (b27 && features >= 2);
+        
+        if(classified) { badge.classList.add('visible', 'pos'); badge.innerText = "CLASSIFIED"; }
+        else { badge.classList.remove('visible', 'pos'); badge.innerText = ""; }
+    }
+
+    function toggleAPS(div) {
+        const checkbox = div.querySelector('input');
+        if(event.target !== checkbox) checkbox.checked = !checkbox.checked;
+        div.classList.toggle('active', checkbox.checked);
+        
+        const clin = document.getElementById('aps_clin').checked;
+        const lab = document.getElementById('aps_lab').checked;
+        
+        const badge = document.getElementById('score-aps');
+        if(clin && lab) { badge.classList.add('visible', 'pos'); badge.innerText = "DEFINITE APS"; }
+        else { badge.classList.remove('visible', 'pos'); badge.innerText = ""; }
+    }
+
+    function calcBSA() {
+        const h = parseFloat(document.getElementById('bsa_ht').value);
+        const w = parseFloat(document.getElementById('bsa_wt').value);
+        if(h && w) {
+            const bsa = 0.007184 * Math.pow(w, 0.425) * Math.pow(h, 0.725);
+            document.getElementById('bsa_res').innerText = bsa.toFixed(2);
+        }
+    }
+    
+    function calcBASDAI() {
+        let q1 = parseFloat(document.querySelectorAll('.bas-in')[0].value)||0;
+        let q2 = parseFloat(document.querySelectorAll('.bas-in')[1].value)||0;
+        let q3 = parseFloat(document.querySelectorAll('.bas-in')[2].value)||0;
+        let q4 = parseFloat(document.querySelectorAll('.bas-in')[3].value)||0;
+        let q5 = parseFloat(document.querySelectorAll('.bas-in')[4].value)||0;
+        let q6 = parseFloat(document.querySelectorAll('.bas-in')[5].value)||0;
+        
+        let score = (q1 + q2 + q3 + q4 + (q5+q6)/2) / 5;
+        const d = document.getElementById('score-basdai');
+        if(d) {
+            d.innerText = score.toFixed(1);
+            if(score >= 4) d.classList.add('high'); else d.classList.remove('high');
+        }
+    }
+    
+    function copyText() {
+        const copyText = document.getElementById("output_text");
+        copyText.select();
+        document.execCommand("copy");
+        alert("Copied to clipboard");
+    }
+
+    function importScores() {
+        const ids = ['score-acr19', 'score-slicc', 'score-sledai'];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if(el && parseFloat(el.innerText) !== 0) {
+                const inputId = 'note_' + id.replace('score-', '');
+                const input = document.getElementById(inputId);
+                if(input) input.value = el.innerText;
+            }
+        });
+        alert("Scores Imported");
+    }
+
+    function resetAll() {
+        if(!confirm("Start New Patient?")) return;
+        document.querySelectorAll('input').forEach(i => {
+            if(i.type === 'checkbox') i.checked = false; else i.value = "";
+        });
+        document.querySelectorAll('textarea').forEach(t => t.value = "");
+        document.querySelectorAll('.calc-item').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.score-display').forEach(s => { s.innerText = "0"; s.classList.remove('high'); });
+        document.querySelectorAll('.status-badge').forEach(b => b.classList.remove('visible', 'pos'));
+        document.getElementById('consult_date').valueAsDate = new Date();
+    }
+
+    function genNote() {
+        let t = `Rheumatology Note\nDate: ${document.getElementById('consult_date').value}\nName: ${document.getElementById('pt_name').value}\n\n`;
+        t += `CC: ${document.getElementById('cc').value}\n\n`;
+        t += `Hx: ${document.getElementById('dx_hx').value}\nMeds: ${document.getElementById('meds').value}\n\n`;
+        t += `Assessment:\n${document.getElementById('assess').value}\n\n`;
+        t += `Scores:\n`;
+        
+        document.querySelectorAll('.score-display').forEach(el => {
+            const val = parseFloat(el.innerText);
+            if(val !== 0) {
+                let title = el.id.replace('score-','').toUpperCase();
+                t += `${title}: ${val}\n`;
+            }
+        });
+        
+        // Check for Definite APS
+        if(document.getElementById('score-aps').innerText === "DEFINITE APS") {
+            t += "APS: Definite\n";
+        }
+
+        document.getElementById('output_text').value = t;
+    }
+    
+    document.getElementById('consult_date').valueAsDate = new Date();
+</script>
+</body>
+</html>
