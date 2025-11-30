@@ -252,10 +252,7 @@
         <div class="panel">
             <h1>Output</h1>
             <textarea id="output_text" style="height:100%; min-height:400px; border:1px solid var(--border-color);" readonly></textarea>
-            <div class="row" style="margin-top:10px;">
-                <button onclick="copyText()" style="flex:1; padding:12px; background:var(--accent-primary); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">📋 Copy</button>
-                <button onclick="window.print()" style="flex:1; background:var(--text-main); color:white; border:none; border-radius:6px; cursor:pointer;">🖨️ Print (Clean)</button>
-            </div>
+            <button onclick="window.print()" style="margin-top:10px; background:#fff; color:#000; padding:10px; border:1px solid #ccc; cursor:pointer; border-radius:4px;">🖨️ Print Note (Clean)</button>
         </div>
     </div>
 </div>
@@ -1064,6 +1061,23 @@
             if(score >= 4) d.classList.add('high'); else d.classList.remove('high');
         }
     }
+
+    function calcCDAI() {
+        const t = parseFloat(document.getElementById('tjc').value)||0;
+        const s = parseFloat(document.getElementById('sjc').value)||0;
+        const p = parseFloat(document.getElementById('pt_glob').value)||0;
+        const m = parseFloat(document.getElementById('md_glob').value)||0;
+        const total = t + s + p + m;
+        const d = document.getElementById('score-cdai');
+        if(d) {
+            d.innerText = total;
+            d.className = 'score-display';
+            if(total > 2.8 && total <= 10) d.style.color = "var(--accent-warn)";
+            else if(total > 10 && total <= 22) d.style.color = "var(--accent-secondary)";
+            else if(total > 22) d.classList.add('high');
+            else d.style.color = "var(--accent-success)";
+        }
+    }
     
     function copyText() {
         const copyText = document.getElementById("output_text");
@@ -1092,7 +1106,7 @@
         });
         document.querySelectorAll('textarea').forEach(t => t.value = "");
         document.querySelectorAll('.calc-item').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.score-display').forEach(s => { s.innerText = "0"; s.classList.remove('high'); });
+        document.querySelectorAll('.score-display').forEach(s => { s.innerText = "0"; s.classList.remove('high'); s.style.color = ""; });
         document.querySelectorAll('.status-badge').forEach(b => b.classList.remove('visible', 'pos'));
         document.getElementById('consult_date').valueAsDate = new Date();
     }
@@ -1112,11 +1126,10 @@
             }
         });
         
-        // Check for Definite APS
         if(document.getElementById('score-aps').innerText === "DEFINITE APS") {
             t += "APS: Definite\n";
         }
-
+        
         document.getElementById('output_text').value = t;
     }
     
